@@ -61,7 +61,7 @@ namespace SQLDemo
                 // Iterates through each record of expenses table
                 while (expenseMethodReader.Read())
                 {
-                    // if payment is due after todays date, write the record
+                    // if payment date int is less than day of the month, write payment
                     if (dayOfMonth <= expenseMethodReader.GetInt32(3))
                     {
                         Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetInt32(3),-8} {expenseMethodReader.GetInt32(4),-3}");
@@ -320,11 +320,23 @@ namespace SQLDemo
                 if (CheckInvalidInputs(tempDate, "validDate")) // function checks that tempDate is a number between 1 - 31
                 {
                     int newExpenseDate = int.Parse(tempDate);
+                    ExpensePage.Expense expense = new ExpensePage.Expense();
+
+                    // initialises values to create datetime object, adds current month and year to users payment date
+                    int year = DateTime.Now.Year;
+                    int month = DateTime.Now.Month;
+                    expense.expensePaymentDate = new DateTime(year, month, newExpenseDate);
+
+                    // if it has passed payment date this month,  set variable to that day the following month
+                    if (DateTime.Now.Day > newExpenseDate)
+                    {
+                        expense.expensePaymentDate = expense.expensePaymentDate.AddMonths(1);
+                    }
 
                     editExpenseCommand.CommandText = "UPDATE Expenses " +
                                       "SET Date = @ExpenseDate WHERE id = @ExpenseID";
 
-                    editExpenseCommand.Parameters.AddWithValue("@ExpenseDate", newExpenseDate);
+                    editExpenseCommand.Parameters.AddWithValue("@ExpenseDate", expense.expensePaymentDate);
                     editExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
                     editExpenseCommand.Prepare();
                     editExpenseCommand.ExecuteNonQuery();

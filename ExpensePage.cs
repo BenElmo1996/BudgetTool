@@ -11,11 +11,11 @@ namespace SQLDemo
     public class ExpensePage
     {
 
-        private class Expense
+        public class Expense
         {
             public string expenseName { get; set; }
             public decimal expensePrice { get; set; }
-            public int expenseDueDate { get; set; }
+            public DateTime expensePaymentDate { get; set; }
             public int expenseContributors { get; set; }
         }
 
@@ -114,16 +114,27 @@ namespace SQLDemo
                                 }
                             }
 
-                            // takes user input for data and validity checks it
+                            // takes user input for date, validity checks it and converts it to DateTime object
                             invalidInput = true;
                             while (invalidInput == true)
                             {
                                 Console.Write("Payment Date: ");
                                 string tempDate = Console.ReadLine();
-                                if (ExpensePageMethods.CheckInvalidInputs(tempDate, "validDate"))
+                                if (ExpensePageMethods.CheckInvalidInputs(tempDate, "validDate")) // if it can parse the user input as an int returns true
                                 {
-                                    expense.expenseDueDate = int.Parse(tempDate);
+                                    int tempPaymentDate = int.Parse(tempDate);
                                     invalidInput = false;
+
+                                    // initialises values to create datetime object, adds current month and year to users payment date
+                                    int year = DateTime.Now.Year;
+                                    int month = DateTime.Now.Month;
+                                    expense.expensePaymentDate = new DateTime(year, month, tempPaymentDate);
+
+                                    // if it has passed payment date this month,  set variable to that day the following month
+                                    if (DateTime.Now.Day > tempPaymentDate)
+                                    {
+                                        expense.expensePaymentDate = expense.expensePaymentDate.AddMonths(1);
+                                    }
                                 }
                                 else
                                 {
@@ -154,7 +165,7 @@ namespace SQLDemo
 
                             addExpenseCommand.Parameters.AddWithValue("@ExpenseName", expense.expenseName);
                             addExpenseCommand.Parameters.AddWithValue("@ExpensePrice", expense.expensePrice);
-                            addExpenseCommand.Parameters.AddWithValue("@ExpenseDate", expense.expenseDueDate);
+                            addExpenseCommand.Parameters.AddWithValue("@ExpenseDate", expense.expensePaymentDate);
                             addExpenseCommand.Parameters.AddWithValue("@ExpenseContributors", expense.expenseContributors);
                             addExpenseCommand.Prepare();
 
@@ -333,7 +344,7 @@ namespace SQLDemo
                     deleteTableCommand.ExecuteNonQuery();
 
                     // creates table again or program will throw error when attempting to reopen
-                    deleteTableCommand.CommandText = "create table if not exists Expenses (id INTEGER PRIMARY KEY, Name TEXT, Price MONEY, Date INT, Contributors INT)";
+                    deleteTableCommand.CommandText = "create table if not exists Expenses (id INTEGER PRIMARY KEY, Name TEXT, Price MONEY, Date TEXT, Contributors INT)";
                     deleteTableCommand.ExecuteNonQuery();
 
                     Console.WriteLine("Expenses Table has been deleted.\n" +
