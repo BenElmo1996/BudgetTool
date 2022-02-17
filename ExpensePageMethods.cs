@@ -32,7 +32,7 @@ namespace SQLDemo
                     Console.WriteLine($"{expenseMethodReader.GetName(0),-3} {expenseMethodReader.GetName(1),-15} {expenseMethodReader.GetName(2),-8} {expenseMethodReader.GetName(3),-8} {expenseMethodReader.GetName(4),-3}");
                     while (expenseMethodReader.Read())
                     {
-                        Console.WriteLine($@"{expenseMethodReader.GetInt32(0),-3} {expenseMethodReader.GetString(1),-15} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetInt32(3),-8} {expenseMethodReader.GetInt32(4),-3}");
+                        Console.WriteLine($@"{expenseMethodReader.GetInt32(0),-3} {expenseMethodReader.GetString(1),-15} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetString(3),-8} {expenseMethodReader.GetInt32(4),-3}");
                     }
                 }
                 else
@@ -41,7 +41,7 @@ namespace SQLDemo
                     Console.WriteLine($"{expenseMethodReader.GetName(1),-18} {expenseMethodReader.GetName(2),-8} {expenseMethodReader.GetName(3),-8} {expenseMethodReader.GetName(4),-3}");
                     while (expenseMethodReader.Read())
                     {
-                        Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetInt32(3),-8} {expenseMethodReader.GetInt32(4),-3}");
+                        Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetString(3),-8} {expenseMethodReader.GetInt32(4),-3}");
                     }
                 }
             }
@@ -55,16 +55,13 @@ namespace SQLDemo
                 // Displays column headers, no ID column
                 Console.WriteLine($"{expenseMethodReader.GetName(1),-18} {expenseMethodReader.GetName(2),-8} {expenseMethodReader.GetName(3),-8} {expenseMethodReader.GetName(4),-3}");
 
-                // Todays date for determining which payments are still to be made
-                int dayOfMonth = DateTime.Today.Day;
-
                 // Iterates through each record of expenses table
                 while (expenseMethodReader.Read())
                 {
-                    // if payment date int is less than day of the month, write payment
-                    if (dayOfMonth <= expenseMethodReader.GetInt32(3))
+                    int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, expenseMethodReader.GetDateTime(3));
+                    if (upcomingExpenseCheck <= 0) // If today is earlier than expense payment date , write expense 
                     {
-                        Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetInt32(3),-8} {expenseMethodReader.GetInt32(4),-3}");
+                        Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetString(3),-8} {expenseMethodReader.GetInt32(4),-3}");
                     }
                 }
             }
@@ -158,9 +155,9 @@ namespace SQLDemo
 
             // Initialises command to select all from Expenses table. 
             using var expenseMethodCommand = new SQLiteCommand(expenseMethodCon);
-            string viewUpcomingExpensesStatement = "SELECT * FROM Expenses";
-            using var viewUpcomingExpensesCommand = new SQLiteCommand(viewUpcomingExpensesStatement, expenseMethodCon);
-            using SQLiteDataReader viewExpensesReader = viewUpcomingExpensesCommand.ExecuteReader();
+            string expenseMethodStatement = "SELECT * FROM Expenses";
+            using var viewUpcomingExpensesCommand = new SQLiteCommand(expenseMethodStatement, expenseMethodCon);
+            using SQLiteDataReader expenseMethodReader = viewUpcomingExpensesCommand.ExecuteReader();
 
             // Todays date for determining which payments are still to be made
             int dayOfMonth = DateTime.Today.Day;
@@ -171,12 +168,13 @@ namespace SQLDemo
                 decimal upcomingTotal = 0;
 
                 // loop iterates through each record in the expenses table
-                while (viewExpensesReader.Read())
+                while (expenseMethodReader.Read())
                 {
                     // if the payment is scheduled for after today's date, add price to currentTotal
-                    if (dayOfMonth <= viewExpensesReader.GetInt32(3))
+                    int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, expenseMethodReader.GetDateTime(3));
+                    if (upcomingExpenseCheck <= 0)
                     {
-                        upcomingTotal += viewExpensesReader.GetDecimal(2);
+                        upcomingTotal += expenseMethodReader.GetDecimal(2);
                     }
                 }
                 return upcomingTotal;
@@ -189,12 +187,13 @@ namespace SQLDemo
                 decimal upcomingContribution = 0;
 
                 // loop iterates through each record in the expenses table
-                while (viewExpensesReader.Read())
+                while (expenseMethodReader.Read())
                 {
                     // if the payment is scheduled for after today's date, divide payment by contributors and add to upcomingContribution
-                    if (dayOfMonth <= viewExpensesReader.GetInt32(3))
+                    int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, expenseMethodReader.GetDateTime(3));
+                    if (upcomingExpenseCheck <= 0)
                     {
-                        upcomingContribution += viewExpensesReader.GetDecimal(2) / viewExpensesReader.GetInt32(4);
+                        upcomingContribution += expenseMethodReader.GetDecimal(2) / expenseMethodReader.GetInt32(4);
                     }
                 }
                 // rounds to 2 decimal places and returns value 
