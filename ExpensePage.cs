@@ -1,187 +1,161 @@
 ﻿using System;
 using System.Data.SQLite;
-using System.ComponentModel.DataAnnotations;
+
 
 namespace SQLDemo
 {
-
+    /// <summary>
+    /// Expense page is where all user expenses are viewed, inputted, edited and deleted. An expense would be a recurring monthly payment i.e. "bill".
+    /// The methods used below are all stored in the ExpensePageMethods class.
+    /// </summary>
     public class ExpensePage
     {
 
         private class Expense
-        {   
-
+        {
             public string expenseName { get; set; }
-            public decimal expenseAmount { get; set; } 
+            public decimal expensePrice { get; set; }
             public int expenseDueDate { get; set; }
-
-
+            public int expenseContributors { get; set; }
         }
 
+        public static decimal totalUserContributions;
 
-    
-
-    static void ShowAllExpenses(bool showIdColumn)
-        {
-            /// <summary>
-            /// Function that displays all expense records with labelled columns. Iterates through the Datbase.db Expenses table
-            /// and prints line by line. Used in menu options 1 (view expenses) and 3 (edit expense).
-            ///
-            /// Takes one argument, if true displays all expenses including record ID. If false displays name / price / payment date and no ID column.
-            /// </summary>
-
-            // Opens Database
-            string viewExpensesConString = "Data Source = ./Database.db"; // Connection string for this menu 
-            using var viewExpensesCon = new SQLiteConnection(viewExpensesConString);
-            viewExpensesCon.Open();
-
-            // Selects all from Expenses and intialises the reader 
-            string viewExpensesStatement = "SELECT * FROM Expenses";
-            using var viewExpensesCommand = new SQLiteCommand(viewExpensesStatement, viewExpensesCon);
-            using SQLiteDataReader viewExpensesReader = viewExpensesCommand.ExecuteReader();
-
-            // Edit and delete expense use true argument when calling this function, view expenses uses false argument. Keeps display tidy as user doesn't interact with ID's on view expense.
-            if (showIdColumn == true)
-            {
-                Console.WriteLine($"{viewExpensesReader.GetName(0),-3} {viewExpensesReader.GetName(1),-15} {viewExpensesReader.GetName(2),-8} {viewExpensesReader.GetName(3),-3}"); 
-                while (viewExpensesReader.Read())
-                {
-                    Console.WriteLine($"{viewExpensesReader.GetInt32(0),-3} {viewExpensesReader.GetString(1),-15} {viewExpensesReader.GetDecimal(2),-8} {viewExpensesReader.GetInt32(3),-3}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"{viewExpensesReader.GetName(1),-15} {viewExpensesReader.GetName(2),-8} {viewExpensesReader.GetName(3),-3}"); 
-                while (viewExpensesReader.Read())
-                {
-                    Console.WriteLine($"{viewExpensesReader.GetString(1),-15} {viewExpensesReader.GetDecimal(2),-8} {viewExpensesReader.GetInt32(3),-3}");
-                }
-            }
-            // linebreak 
-            Console.WriteLine("");
-            
-            viewExpensesCon.Close();
-        }
-
-        static void GetSumOfExpenses()
-        {
-            string getSumOfExpensesConString = "Data Source = ./Database.db"; // Connection string for this menu 
-            using var getSumOfExpensesCon = new SQLiteConnection(getSumOfExpensesConString);
-            getSumOfExpensesCon.Open();
-
-            using var getTotalExpenses = new SQLiteCommand(getSumOfExpensesCon);
-            getTotalExpenses.CommandText = "SELECT SUM(Amount) FROM Expenses";
-            getTotalExpenses.ExecuteNonQuery();
-
-            // DBNull check here otherwise program will throw an error
-            if (getTotalExpenses.ExecuteScalar() is DBNull)
-            {
-                Console.WriteLine("No expenses recorded yet, when you have added some they will appear here.\n" +
-                                  "");
-
-            }
-            else
-            {
-                decimal totalExpenses = Convert.ToDecimal(getTotalExpenses.ExecuteScalar());
-
-                Console.WriteLine($"Your total monthly expenses equate to £{totalExpenses}\n" +
-                                  $"");
-            }
-        }
-
-
+        // MAIN PAGE 
         public static void ExpenseMenu()
         {
 
-            // Opens connection with database, this connection string and connection are used multiple times throughout menu.
-            string connectionString = "Data Source = ./Database.db"; 
+            // Initialises an SQLiteConnection for use throughout this page
+            string connectionString = "Data Source = ./Database.db";
             var expensesConnection = new SQLiteConnection(connectionString);
-            expensesConnection.Open(); // Database is not closed until user closes or returns to main menu
-
-            // Checks if Expenses table exists, if not it creates table
-            using var checkTable = new SQLiteCommand(expensesConnection);
-            checkTable.CommandText = "create table if not exists Expenses (id INTEGER PRIMARY KEY, Name TEXT, Amount MONEY, Date INT)";
-            checkTable.ExecuteNonQuery();
-
+            expensesConnection.Open();
 
             // Main Expense menu loop
             while (true)
             {
                 Console.Write("Expense Management\n" +
                                    "1. View expenses.\n" +
-                                   "2. Add an expense.\n" +
-                                   "3. View upcoming expenses.\n" +
+                                   "2. View upcoming expenses.\n" +
+                                   "3. Add an expense.\n" +
                                    "4. Edit an expense.\n" +
-                                   "5. Delete an expenses.\n" +
+                                   "5. Delete an expense.\n" +
                                    "6. Delete expenses table.\n" +
-                                   "" +
+                                   "7. Return to Main Menu.\n" +
                                    "Menu Choice: ");
 
                 string expenseMenuChoice = Console.ReadLine();
 
+                //line break
+                Console.WriteLine("");
 
-                // View Expenses block
+
+                // VIEW EXPENSES BLOCK
                 if (expenseMenuChoice == "1")
                 {
-                    // false argument because we don't want to display ID column
-                    ShowAllExpenses(false);
+                    // false argument because we don't want to display ID column. ALL arg to show all records.
+                    ExpensePageMethods.ShowExpenses(false, "ALL");
 
-                    using var getTotalExpenses = new SQLiteCommand(expensesConnection);
-                    getTotalExpenses.CommandText = "SELECT SUM(Amount) FROM Expenses";
-                    getTotalExpenses.ExecuteNonQuery();
+                    Console.WriteLine($"Total expenses equate to £{ExpensePageMethods.GetSumOfExpenses("TOTAL")}. Your share of this total is £{ExpensePageMethods.GetSumOfExpenses("USER CONTRIBUTION")}");
 
-                    // DBNull check here otherwise program will throw an error
-                    if (getTotalExpenses.ExecuteScalar() is DBNull)
-                    {
-                        Console.WriteLine("No expenses recorded yet, when you have added some they will appear here.\n" +
-                                          "");
-
-                    }
-                    else
-                    {
-                        decimal totalExpenses = Convert.ToDecimal(getTotalExpenses.ExecuteScalar());
-
-                        Console.WriteLine($"Your total monthly expenses equate to £{totalExpenses}\n" +
-                                          $"");
-                    }
+                    //linebreak
+                    Console.WriteLine("");
                 }
 
-                // Add an Expense block
+                // VIEW UPCOMING EXPENSES BLOCK 
                 else if (expenseMenuChoice == "2")
                 {
+                    // false argument because we don't want to display ID column. UPCOMING arg to show only future payments (after todays date).
+                    ExpensePageMethods.ShowExpenses(false, "UPCOMING");
 
+                    Console.WriteLine($"Total upcoming expenses equate to £{ExpensePageMethods.GetSumUpcomingExpenses("TOTAL")}. Your share of this total is £{ExpensePageMethods.GetSumUpcomingExpenses("USER CONTRIBUTION")}");
+
+                    //linebreak
+                    Console.WriteLine("");
+                }
+
+                // ADD NEW EXPENSE BLOCK
+                else if (expenseMenuChoice == "3")
+                {
                     bool exitAddExpense = false; // this flag changed to true and loop is exited when user inputs 'q'
 
                     // Main Loop for adding expenses
                     while (exitAddExpense == false)
                     {
                         Console.WriteLine("\n" +
-                                          "Please enter a Name, Price and Payment Date for your expense.\n" +
+                                          "Please enter a Name, Price, Payment Date and how many people the expense will be shared between.\n" +
                                           "Your payment date should be entered as a number, the suffix (i.e. th / rd / nd) is not required.\n" +
                                           "\n" +
-                                          "Press enter to continiue with adding an expense or alternatively input 'q' to return to menu.");
+                                          "Press enter to continue with adding an expense or alternatively input 'q' to return to menu.");
 
                         var userInput = Console.ReadLine();
-
-                        // if user hits enter
                         if (userInput == "")
                         {
                             // creates a new Expense object from user input
                             Expense expense = new Expense();
+
+                            
                             Console.Write("Name: ");
                             expense.expenseName = Console.ReadLine();
-                            Console.Write("Amount: ");
-                            expense.expenseAmount = decimal.Parse(Console.ReadLine());
-                            Console.Write("Payment Date: ");
-                            expense.expenseDueDate = int.Parse(Console.ReadLine());
+
+                            // takes user input for price and checks validity of input 
+                            bool invalidInput = true;
+                            while (invalidInput == true)
+                            {
+                                Console.Write("Price: ");
+                                string tempPrice = Console.ReadLine();
+                                if (ExpensePageMethods.CheckInvalidInputs(tempPrice, "validNum"))
+                                {
+                                    expense.expensePrice = decimal.Parse(tempPrice);
+                                    invalidInput = false;
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"{tempPrice} is an invalid input");
+                                }
+                            }
+
+                            // takes user input for data and validity checks it
+                            invalidInput = true;
+                            while (invalidInput == true)
+                            {
+                                Console.Write("Payment Date: ");
+                                string tempDate = Console.ReadLine();
+                                if (ExpensePageMethods.CheckInvalidInputs(tempDate, "validDate"))
+                                {
+                                    expense.expenseDueDate = int.Parse(tempDate);
+                                    invalidInput = false;
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"{tempDate} is an invalid input");
+                                }
+                            }
+
+                            // takes user input for how many contributors
+                            invalidInput = true;
+                            while (invalidInput == true)
+                            {
+                                Console.Write("Number of Contributors: ");
+                                string tempContributors = Console.ReadLine();
+                                if (ExpensePageMethods.CheckInvalidInputs(tempContributors, "validNum"))
+                                {
+                                    expense.expenseContributors = int.Parse(tempContributors);
+                                    invalidInput = false;
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"{tempContributors} is an invalid input");
+                                }
+                            }
 
                             // Initiliases command and passes placeholder values for new expense record
                             using var addExpenseCommand = new SQLiteCommand(expensesConnection);
-                            addExpenseCommand.CommandText = "INSERT INTO Expenses(Name, Amount, Date) VALUES(@ExpenseName, @ExpenseAmount, @ExpenseDate)";
+                            addExpenseCommand.CommandText = "INSERT INTO Expenses(Name, Price, Date, Contributors) VALUES(@ExpenseName, @ExpensePrice, @ExpenseDate, @ExpenseContributors)";
 
                             addExpenseCommand.Parameters.AddWithValue("@ExpenseName", expense.expenseName);
-                            addExpenseCommand.Parameters.AddWithValue("@ExpenseAmount", expense.expenseAmount);
+                            addExpenseCommand.Parameters.AddWithValue("@ExpensePrice", expense.expensePrice);
                             addExpenseCommand.Parameters.AddWithValue("@ExpenseDate", expense.expenseDueDate);
+                            addExpenseCommand.Parameters.AddWithValue("@ExpenseContributors", expense.expenseContributors);
                             addExpenseCommand.Prepare();
 
                             addExpenseCommand.ExecuteNonQuery();
@@ -198,190 +172,180 @@ namespace SQLDemo
                             Console.WriteLine($"{userInput} is Invalid Input.");
                         }
                     }
-                }
-                else if (expenseMenuChoice == "3")
-                {
-                    // Initialises command to select all from Expenses table in Date order (low to high) 
-                    using var viewUpcomingExpenses = new SQLiteCommand(expensesConnection);
-                    string viewUpcomingExpensesStatement = "SELECT * FROM Expenses order by Date";
-                    using var viewUpcomingExpensesCommand = new SQLiteCommand(viewUpcomingExpensesStatement, expensesConnection);
-                    using SQLiteDataReader viewExpensesReader = viewUpcomingExpensesCommand.ExecuteReader();
-
-                    // Displays column headers, no ID column
-                    Console.WriteLine($"{viewExpensesReader.GetName(1),-15} {viewExpensesReader.GetName(2),-8} {viewExpensesReader.GetName(3),-3}"); 
-
-                    // Todays date for determining which payments are still to be made
-                    int dayOfMonth = DateTime.Today.Day;
-
-                    // Writes all upcoming payments due on or after todays date this month
-                    while (viewExpensesReader.Read())
-                    {
-                        if (dayOfMonth <= viewExpensesReader.GetInt32(3))
-                        {
-                            Console.WriteLine($"{viewExpensesReader.GetInt32(0),-3} {viewExpensesReader.GetString(1),-15} {viewExpensesReader.GetDecimal(2),-8} {viewExpensesReader.GetInt32(3),-3}");
-                        }
-                    }
-
-                    GetSumOfExpenses();
-
-                    // linebreak
-                    Console.WriteLine("");
+                    
                 }
 
-                // Edit current expenses records in this block
+                // EDIT EXPENSES BLOCK
                 else if (expenseMenuChoice == "4")
                 {
+                    // shows all expenses from expense table
+                    ExpensePageMethods.ShowExpenses(true, "ALL");
+
                     // exit flag for this loop, change to true when user inputs 'q'.
                     bool exitEditExpense = false;
-
-                    
-
                     while (exitEditExpense == false)
-                       
-                    {
-                        ShowAllExpenses(true);
 
-                        // Initiliases command and passes placeholder values for new expense record
+                    {
+                        // Initiliases sqlite command 
                         using var editExpenseCommand = new SQLiteCommand(expensesConnection);
 
                         // This will be the expense edited by user
-                        Console.Write("Please select which expense to ammend from the ID's above: ");
+                        Console.Write("Please select which expense to ammend from the ID's above (or input 'q' to quit): ");
                         var expenseID = Console.ReadLine();
 
-                        Console.Write("Select which element of the expense you would like to update (or input 'q' to quit):\n" +
-                                       "1. Name.\n" +
-                                       "2. Price.\n" +
-                                       "3. Payment Date.\n" +
-                                       "4. All of the above.\n" +
-                                       "" +
-                                       "Menu Choice: ");
-                        var editMenuChoice = Console.ReadLine();
+                        //linebreak
+                        Console.WriteLine("");
 
-                        // If block for just editing the expense name
-                        if (editMenuChoice == "1")
-                        {
-                            Console.Write("Please enter the new expense name: ");
-                            string newExpenseName = Console.ReadLine();
-
-                            editExpenseCommand.CommandText = "UPDATE Expenses " +
-                                                      "SET Name = @ExpenseName WHERE id = @ExpenseID";
-
-                            editExpenseCommand.Parameters.AddWithValue("@ExpenseName", newExpenseName);
-                            editExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
-                            editExpenseCommand.Prepare();
-
-                            editExpenseCommand.ExecuteNonQuery();
-
-                            Console.WriteLine("Expense Edited");
-                        }
-
-                        // if block for editing the expense price
-                        else if (editMenuChoice == "2")
-                        {
-                            Console.Write("Please enter the new expense price : ");
-                            decimal newExpensePrice = decimal.Parse(Console.ReadLine());
-
-                            editExpenseCommand.CommandText = "UPDATE Expenses " +
-                                                      "SET Amount = @ExpensePrice WHERE id = @ExpenseID";
-
-                            editExpenseCommand.Parameters.AddWithValue("@ExpensePrice", newExpensePrice);
-                            editExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
-                            editExpenseCommand.Prepare();
-
-                            editExpenseCommand.ExecuteNonQuery();
-
-                            Console.WriteLine("Expense Edited");
-
-                        }
-
-                        // if block for editing the payment date
-                        else if (editMenuChoice == "3")
-                        {
-                            Console.Write("Please enter the new expense payment date : ");
-                            int newExpenseDate = int.Parse(Console.ReadLine());
-
-                            editExpenseCommand.CommandText = "UPDATE Expenses " +
-                                                      "SET Date = @ExpenseDate WHERE id = @ExpenseID";
-
-                            editExpenseCommand.Parameters.AddWithValue("@ExpenseDate", newExpenseDate);
-                            editExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
-                            editExpenseCommand.Prepare();
-
-                            editExpenseCommand.ExecuteNonQuery();
-
-                            Console.WriteLine("Expense Edited");
-
-                        }
-
-                        // if block for editing the entire expense (name / price / date) 
-                        else if (editMenuChoice == "4")
-                        {
-                            Console.Write("Please enter the new expense name: ");
-                            string newExpenseName = Console.ReadLine();
-                            Console.Write("Please enter the new expense price : ");
-                            decimal newExpensePrice = decimal.Parse(Console.ReadLine());
-                            Console.Write("Please enter the new expense payment date : ");
-                            int newExpenseDate = int.Parse(Console.ReadLine());
-
-                            editExpenseCommand.CommandText = "UPDATE Expenses " +
-                                                      "SET Name = @ExpenseName, Amount = @ExpensePrice, Date = @ExpenseDate WHERE id = @ExpenseID";
-
-
-                            editExpenseCommand.Parameters.AddWithValue("@ExpenseName", newExpenseName);
-                            editExpenseCommand.Parameters.AddWithValue("@ExpensePrice", newExpensePrice);
-                            editExpenseCommand.Parameters.AddWithValue("@ExpenseDate", newExpenseDate);
-                            editExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
-                            editExpenseCommand.Prepare();
-
-                            editExpenseCommand.ExecuteNonQuery();
-
-                            Console.WriteLine("Expense Edited");
-
-                        }
-                        else if (editMenuChoice == "q")
+                        // exit loop here
+                        if (expenseID == "q")
                         {
                             exitEditExpense = true;
                         }
+                        // Checks if expenseID is a number or present in the ID column
+                        else if (ExpensePageMethods.CheckInvalidInputs(expenseID, "validNum") == false || ExpensePageMethods.CheckInvalidInputs(expenseID, "validID") == false)
+                        {
+                            Console.WriteLine($"{expenseID} is not a valid ID\n" +
+                                              $"");
+                        }
                         else
                         {
-                            Console.WriteLine($"{editMenuChoice} is invalid input, please enter a menu choice or 'q' to quit.");
+                            Console.Write("Select which element of the expense you would like to update (or input 'q' to quit):\n" +
+                                           "1. Name.\n" +
+                                           "2. Price.\n" +
+                                           "3. Payment Date.\n" +
+                                           "4. Contributors.\n" +
+                                           "5. All of the above.\n" +
+                                           "" +
+                                           "Menu Choice: ");
+                            var editMenuChoice = Console.ReadLine();
+
+                            // NAMES EDITED IN HERE
+                            if (editMenuChoice == "1")
+                            {
+                                Console.Write("Please enter the new expense name: ");
+                                string newExpenseName = Console.ReadLine();
+
+                                editExpenseCommand.CommandText = "UPDATE Expenses " +
+                                                          "SET Name = @ExpenseName WHERE id = @ExpenseID";
+
+                                editExpenseCommand.Parameters.AddWithValue("@ExpenseName", newExpenseName);
+                                editExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
+                                editExpenseCommand.Prepare();
+
+                                editExpenseCommand.ExecuteNonQuery();
+
+                                Console.WriteLine("Expense Name Edited");
+                            }
+
+                            // PRICE EDITED IN HERE
+                            else if (editMenuChoice == "2")
+                            {
+                                ExpensePageMethods.EditExpensePrice(editExpenseCommand, expenseID);
+                                Console.WriteLine("Expense Price Edited");
+                            }
+                            // DATES EDITED IN HERE
+                            else if (editMenuChoice == "3")
+                            {
+                                ExpensePageMethods.EditExpenseDate(editExpenseCommand, expenseID);
+                                Console.WriteLine("Payment Date Edited");
+                            }
+                            // CONTRIBUTORS EDITED IN HERE
+                            else if (editMenuChoice == "4")
+                            {
+                                ExpensePageMethods.EditExpenseContributors(editExpenseCommand, expenseID);
+                                Console.WriteLine("No. of Contributors Edited");
+                            }
+
+                            // NAME / PRICE / DATE EDITED IN HERE 
+                            else if (editMenuChoice == "5")
+                            {
+                                Console.Write("Please enter the new expense name: ");
+                                string newExpenseName = Console.ReadLine();
+                                editExpenseCommand.CommandText = "UPDATE Expenses " +
+                                                         "SET Name = @ExpenseName WHERE id = @ExpenseID";
+                                editExpenseCommand.Parameters.AddWithValue("@ExpenseName", newExpenseName);
+                                editExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
+                                editExpenseCommand.Prepare();
+                                editExpenseCommand.ExecuteNonQuery();
+
+                                ExpensePageMethods.EditExpensePrice(editExpenseCommand, expenseID);
+
+                                ExpensePageMethods.EditExpenseDate(editExpenseCommand, expenseID);
+
+                                Console.WriteLine("Expense Edited");
+
+                            }
+                            else if (editMenuChoice == "q")
+                            {
+                                exitEditExpense = true;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"{editMenuChoice} is invalid input, please re-enter ID and appropriate menu choice.");
+                            }
+                        }
+
+                    }
+                }
+
+                // DELETE EXPENSE BLOCK
+                else if (expenseMenuChoice == "5")
+                {
+                    ExpensePageMethods.ShowExpenses(true, "ALL");
+
+                    bool exitMenu = false;
+
+                    while (exitMenu == false)
+                    {
+                        Console.Write("Please select which expense to delete from the ID's above (or input 'q' to quit): ");
+                        var expenseID = Console.ReadLine();
+                        if (expenseID == "q")
+                        {
+                            exitMenu = true;
+                        }
+                        else if (ExpensePageMethods.CheckInvalidInputs(expenseID, "validNum") == false || ExpensePageMethods.CheckInvalidInputs(expenseID, "validID") == false)
+                        {
+                            Console.WriteLine($"{expenseID} is not a valid ID\n" +
+                                              $"");
+                        }
+                        else
+                        {
+                            // Initiliases command and passes placeholder values for new expense record
+                            using var deleteExpenseCommand = new SQLiteCommand(expensesConnection);
+                            deleteExpenseCommand.CommandText = "DELETE FROM Expenses WHERE id = @ExpenseID";
+
+                            deleteExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
+                            deleteExpenseCommand.Prepare();
+
+                            deleteExpenseCommand.ExecuteNonQuery();
+
+                            Console.WriteLine("Expense Deleted\n" +
+                                              "");
                         }
                     }
                 }
 
-                // Block for deleting individual records
-                else if (expenseMenuChoice == "5")
-                {
-
-                    ShowAllExpenses(true);
-
-                    Console.Write("Please select which expense to delete from the ID's above: ");
-                    var expenseID = Console.ReadLine();
-
-                    // Initiliases command and passes placeholder values for new expense record
-                    using var deleteExpenseCommand = new SQLiteCommand(expensesConnection);
-                    deleteExpenseCommand.CommandText = "DELETE FROM Expenses WHERE id = @ExpenseID";
-
-                    deleteExpenseCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
-                    deleteExpenseCommand.Prepare();
-
-                    deleteExpenseCommand.ExecuteNonQuery();
-
-                    Console.WriteLine("Expense Deleted");
-
-                }
-
-                // Deletes the expenses table 
-                else if (expenseMenuChoice == "5")
+                // Deletes ALL EXPENSES BLOCK
+                else if (expenseMenuChoice == "6")
                 {
                     using var deleteTableCommand = new SQLiteCommand(expensesConnection);
                     deleteTableCommand.CommandText = "DROP TABLE Expenses";
                     deleteTableCommand.ExecuteNonQuery();
 
                     // creates table again or program will throw error when attempting to reopen
-                    checkTable.CommandText = "create table if not exists Expenses (id INTEGER PRIMARY KEY, Name TEXT, Amount MONEY, Date INT)";
-                    checkTable.ExecuteNonQuery();
+                    deleteTableCommand.CommandText = "create table if not exists Expenses (id INTEGER PRIMARY KEY, Name TEXT, Price MONEY, Date INT, Contributors INT)";
+                    deleteTableCommand.ExecuteNonQuery();
 
+                    Console.WriteLine("Expenses Table has been deleted.\n" +
+                                      "");
+
+                }
+
+                // RETURN TO MENU
+                else if (expenseMenuChoice == "7")
+                {
+                    expensesConnection.Close();
+                    MainMenu.Main();
                 }
 
             }
