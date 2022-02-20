@@ -58,8 +58,7 @@ namespace SQLDemo
                 // Iterates through each record of expenses table
                 while (expenseMethodReader.Read())
                 {
-                    int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, expenseMethodReader.GetDateTime(3));
-                    if (upcomingExpenseCheck <= 0) // If today is earlier than expense payment date , write expense 
+                    if (expenseMethodReader.GetInt32(5) == 0)
                     {
                         Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetString(3),-8} {expenseMethodReader.GetInt32(4),-3}");
                     }
@@ -170,9 +169,7 @@ namespace SQLDemo
                 // loop iterates through each record in the expenses table
                 while (expenseMethodReader.Read())
                 {
-                    // if the payment is scheduled for after today's date, add price to currentTotal
-                    int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, expenseMethodReader.GetDateTime(3));
-                    if (upcomingExpenseCheck <= 0)
+                    if (expenseMethodReader.GetInt32(5) == 0)
                     {
                         upcomingTotal += expenseMethodReader.GetDecimal(2);
                     }
@@ -185,13 +182,11 @@ namespace SQLDemo
             {
                 // currentTotal used below to hold the total of all upcoming expenses
                 decimal upcomingContribution = 0;
-
+                
                 // loop iterates through each record in the expenses table
                 while (expenseMethodReader.Read())
                 {
-                    // if the payment is scheduled for after today's date, divide payment by contributors and add to upcomingContribution
-                    int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, expenseMethodReader.GetDateTime(3));
-                    if (upcomingExpenseCheck <= 0)
+                    if (expenseMethodReader.GetInt32(5) == 0)
                     {
                         upcomingContribution += expenseMethodReader.GetDecimal(2) / expenseMethodReader.GetInt32(4);
                     }

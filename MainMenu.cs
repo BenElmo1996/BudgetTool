@@ -14,7 +14,7 @@ namespace SQLDemo
             using var menuCommand = new SQLiteCommand(menuConnection);
 
             // Checks if Expenses table exists, if not it creates table
-            menuCommand.CommandText = "create table if not exists Expenses (id INTEGER PRIMARY KEY, Name TEXT, Price MONEY, Date INT, Contributors INT)";
+            menuCommand.CommandText = "create table if not exists Expenses (id INTEGER PRIMARY KEY, Name TEXT, Price MONEY, Date TEXT, Contributors INT, Flag INT)";
             menuCommand.ExecuteNonQuery();
 
             // Checks if Purchases table exists, if not it creates table
@@ -37,7 +37,7 @@ namespace SQLDemo
             using var menuReaderCommand = new SQLiteCommand(menuStatement, menuConnection);
             using SQLiteDataReader menuReader = menuReaderCommand.ExecuteReader();
             decimal takeHomePay = 0;
-            DateTime nextPayDate = DateTime.Now; // this variable used for calculating whether payday has passed.
+            DateTime nextPayDate = DateTime.Now; // Initialised as DateTime.Now but then assigned to next pay day below (throws error otherwise)
             while (menuReader.Read())
             {
                 takeHomePay = menuReader.GetDecimal(1); // returns either the placeholder value of 0, or the users takehome pay if they have entered one
@@ -46,8 +46,18 @@ namespace SQLDemo
 
             // Assigns a value based on comparison of next pay date and today's date. If today is earlier the below if statement is true.
             int monthlyResetCheck = DateTime.Compare(DateTime.Now, nextPayDate);
-            if (monthlyResetCheck >= 0) // If today is later than next pay day
+            if (monthlyResetCheck >= 0) // If today is later than pay day
             {
+                
+                nextPayDate = nextPayDate.AddMonths(1); // Increments next pay day by a month
+
+                // Inserts the new pay day into UserInfo table 
+                menuCommand.CommandText = "UPDATE UserInfo " +
+                                              "SET NextPayDate = @PayDay WHERE id = 1";
+                menuCommand.Parameters.AddWithValue("@NextPayDate", nextPayDate);
+                menuCommand.Prepare();
+                menuCommand.ExecuteNonQuery();
+
                 // RESET PURCHASES TABLE IN HERE
                 menuCommand.CommandText = "DROP TABLE Purchases";
                 menuCommand.ExecuteNonQuery();
@@ -58,7 +68,48 @@ namespace SQLDemo
 
                 Console.WriteLine("Purchase Table has been reset following a new pay month.\n" +
                                   "");
+
+                menuCommand.CommandText = "Update Expenses SET Flag = 0";
+                menuCommand.ExecuteNonQuery();
+
             }
+
+            menuStatement = "SELECT * FROM Expenses";
+            using var menuReaderCommand2 = new SQLiteCommand(menuStatement, menuConnection);
+            using SQLiteDataReader menuReader2 = menuReaderCommand2.ExecuteReader();
+            int paidFlag;
+            while (menuReader2.Read())
+            {
+                // if the payment is scheduled for before today's date, divide payment by contributors and add to upcomingContribution
+                int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, menuReader2.GetDateTime(3));
+
+                int expenseID = menuReader2.GetInt32(0);
+                menuCommand.CommandText = "UPDATE Expenses " +
+                                          "SET Flag = @ExpenseFlag WHERE id = @ExpenseID";
+
+                if (upcomingExpenseCheck >= 0)
+                {
+                    paidFlag = 1;
+                }
+                else
+                {
+                    paidFlag = 0;
+                }
+                menuCommand.Parameters.AddWithValue("@ExpenseFlag", paidFlag);
+                menuCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
+                menuCommand.Prepare();
+                menuCommand.ExecuteNonQuery();
+            }
+
+
+           
+
+
+
+
+
+
+
 
             bool exitMenu = false; // initialise exit menu flag, not currently used.
             while (exitMenu == false)
