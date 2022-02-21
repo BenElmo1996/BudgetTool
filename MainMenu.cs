@@ -46,59 +46,88 @@ namespace SQLDemo
 
             // Assigns a value based on comparison of next pay date and today's date. If today is earlier the below if statement is true.
             int monthlyResetCheck = DateTime.Compare(DateTime.Now, nextPayDate);
+            int paidFlag;
             if (monthlyResetCheck >= 0) // If today is later than pay day
             {
-                
-                nextPayDate = nextPayDate.AddMonths(1); // Increments next pay day by a month
+                // Updates payday to next month's date
+                UserInfoPage.UpdatePayDay(nextPayDate.Day, menuCommand);
 
-                // Inserts the new pay day into UserInfo table 
-                menuCommand.CommandText = "UPDATE UserInfo " +
-                                              "SET NextPayDate = @PayDay WHERE id = 1";
-                menuCommand.Parameters.AddWithValue("@NextPayDate", nextPayDate);
-                menuCommand.Prepare();
-                menuCommand.ExecuteNonQuery();
-
-                // RESET PURCHASES TABLE IN HERE
+                // Reset and recreate purchases table
                 menuCommand.CommandText = "DROP TABLE Purchases";
                 menuCommand.ExecuteNonQuery();
-
-                // creates table again or program will throw error when attempting to reopen
                 menuCommand.CommandText = "create table if not exists Purchases (id INTEGER PRIMARY KEY, Name TEXT, Price MONEY, Date INT)";
                 menuCommand.ExecuteNonQuery();
 
                 Console.WriteLine("Purchase Table has been reset following a new pay month.\n" +
                                   "");
 
+                // Resets all expense paid flags to 0
                 menuCommand.CommandText = "Update Expenses SET Flag = 0";
                 menuCommand.ExecuteNonQuery();
 
+                // TODO THIS WILL INCREMENT ALL EXPENSE PAYMENTS TO THE NEXT MONTH
+                string menuStatement2 = "SELECT * FROM Expenses";
+                using var menuReaderCommand2 = new SQLiteCommand(menuStatement2, menuConnection);
+                using SQLiteDataReader menuReader2 = menuReaderCommand2.ExecuteReader();
+               
+                while (menuReader2.Read())
+                {
+                    int expenseID = menuReader2.GetInt32(0);
+                    int year = DateTime.Now.Year;
+                    int month = DateTime.Now.Month;
+                    DateTime expensePaymentDay = new DateTime(year, month, menuReader2.GetDateTime(3).Day);
+
+                    // if it has passed payday this month, payday set to that day the following month
+                    if (DateTime.Now.Day > menuReader2.GetDateTime(3).Day)
+                    {
+                        expensePaymentDay = expensePaymentDay.AddMonths(1);
+                        paidFlag = 3;
+                    }
+                    else
+                    {
+                        paidFlag = 0;
+                    }
+
+                    menuCommand.CommandText = "UPDATE Expenses " +
+                                          "SET Date = @ExpenseDate, Flag = @ExpenseFlag WHERE id = @ExpenseID";
+
+                    menuCommand.Parameters.AddWithValue("@ExpenseDate", expensePaymentDay);
+                    menuCommand.Parameters.AddWithValue("@ExpenseFlag", paidFlag);
+                    menuCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
+                    menuCommand.Prepare();
+                    menuCommand.ExecuteNonQuery();
+                }
             }
 
-            menuStatement = "SELECT * FROM Expenses";
-            using var menuReaderCommand2 = new SQLiteCommand(menuStatement, menuConnection);
-            using SQLiteDataReader menuReader2 = menuReaderCommand2.ExecuteReader();
-            int paidFlag;
-            while (menuReader2.Read())
+            string menuStatement3 = "SELECT * FROM Expenses";
+            using var menuReaderCommand3 = new SQLiteCommand(menuStatement3, menuConnection);
+            using SQLiteDataReader menuReader3 = menuReaderCommand3.ExecuteReader();
+            while (menuReader3.Read())
             {
                 // if the payment is scheduled for before today's date, divide payment by contributors and add to upcomingContribution
-                int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, menuReader2.GetDateTime(3));
+                int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, menuReader3.GetDateTime(3));
 
-                int expenseID = menuReader2.GetInt32(0);
+                int expenseID = menuReader3.GetInt32(0);
                 menuCommand.CommandText = "UPDATE Expenses " +
                                           "SET Flag = @ExpenseFlag WHERE id = @ExpenseID";
-
-                if (upcomingExpenseCheck >= 0)
+                
+                if (menuReader3.GetInt32(5) != 3)
                 {
-                    paidFlag = 1;
+                    if (upcomingExpenseCheck >= 0)
+                    {
+                        paidFlag = 1;
+                    }
+                    else
+                    {
+                        paidFlag = 0;
+                    }
+                    menuCommand.Parameters.AddWithValue("@ExpenseFlag", paidFlag);
+                    menuCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
+                    menuCommand.Prepare();
+                    menuCommand.ExecuteNonQuery();
                 }
-                else
-                {
-                    paidFlag = 0;
-                }
-                menuCommand.Parameters.AddWithValue("@ExpenseFlag", paidFlag);
-                menuCommand.Parameters.AddWithValue("@ExpenseID", expenseID);
-                menuCommand.Prepare();
-                menuCommand.ExecuteNonQuery();
+                
+               
             }
 
 

@@ -5,6 +5,33 @@ namespace SQLDemo
 {
     public class UserInfoPage
     {
+        // Updates the payday field of UserInfo table
+        public static void UpdatePayDay(int userPayDay, SQLiteCommand userInfoCommand)
+        {
+
+            int year = DateTime.Now.Year;
+            int month = DateTime.Now.Month;
+            DateTime payDay = new DateTime(year, month, userPayDay);
+
+            // if it has passed payday this month, payday set to that day the following month
+            if (DateTime.Now.Day > userPayDay)
+            {
+                payDay = payDay.AddMonths(1);
+            }
+
+            userInfoCommand.CommandText = "UPDATE UserInfo " +
+                                      "SET PayDay = @PayDay WHERE id = 1";
+
+            userInfoCommand.Parameters.AddWithValue("@PayDay", payDay);
+            userInfoCommand.Prepare();
+
+            userInfoCommand.ExecuteNonQuery();
+        }
+
+
+
+
+
         public static  void UserInfoMenu()
         {
             string connectionString = "Data Source = ./Database.db";
@@ -48,23 +75,7 @@ namespace SQLDemo
                     Console.Write("Please enter the your pay date: ");
                     int userPayDay = int.Parse(Console.ReadLine());
 
-                    int year = DateTime.Now.Year;
-                    int month = DateTime.Now.Month;
-                    DateTime payDay = new DateTime(year, month, userPayDay);
-
-                    // if it has passed payday this month, payday set to that day the following month
-                    if (DateTime.Now.Day > userPayDay)
-                    {
-                        payDay = payDay.AddMonths(1);
-                    }
-
-                    userInfoCommand.CommandText = "UPDATE UserInfo " +
-                                              "SET PayDay = @PayDay WHERE id = 1";
-
-                    userInfoCommand.Parameters.AddWithValue("@PayDay", payDay);
-                    userInfoCommand.Prepare();
-
-                    userInfoCommand.ExecuteNonQuery();
+                    UpdatePayDay(userPayDay, userInfoCommand);
 
                     Console.WriteLine("Pay Day Input.");
                 }
