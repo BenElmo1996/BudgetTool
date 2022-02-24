@@ -7,9 +7,15 @@
 
   <ItemGroup>
     <None Remove="SQLite" />
+    <None Remove="Purchase Page\" />
+    <None Remove="Expense Page\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SQLite" Version="3.13.0" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Pages\" />
+    <Folder Include="Methods\" />
   </ItemGroup>
 </Project>

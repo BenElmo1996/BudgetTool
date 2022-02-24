@@ -32,7 +32,8 @@ namespace SQLDemo
                     Console.WriteLine($"{expenseMethodReader.GetName(0),-3} {expenseMethodReader.GetName(1),-15} {expenseMethodReader.GetName(2),-8} {expenseMethodReader.GetName(3),-8} {expenseMethodReader.GetName(4),-3}");
                     while (expenseMethodReader.Read())
                     {
-                        Console.WriteLine($@"{expenseMethodReader.GetInt32(0),-3} {expenseMethodReader.GetString(1),-15} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetString(3),-8} {expenseMethodReader.GetInt32(4),-3}");
+                        string formattedDate = expenseMethodReader.GetString(3).Substring(5,6);
+                        Console.WriteLine($@"{expenseMethodReader.GetInt32(0),-3} {expenseMethodReader.GetString(1),-15} £{expenseMethodReader.GetDecimal(2),-8} {formattedDate,-8} {expenseMethodReader.GetInt32(4),-3}");
                     }
                 }
                 else
@@ -41,7 +42,9 @@ namespace SQLDemo
                     Console.WriteLine($"{expenseMethodReader.GetName(1),-18} {expenseMethodReader.GetName(2),-8} {expenseMethodReader.GetName(3),-8} {expenseMethodReader.GetName(4),-3}");
                     while (expenseMethodReader.Read())
                     {
-                        Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetString(3),-8} {expenseMethodReader.GetInt32(4),-3}");
+                        // formatted date removes year and time, retains month and day
+                        string formattedDate = expenseMethodReader.GetString(3).Substring(5,6);
+                        Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {formattedDate,-8} {expenseMethodReader.GetInt32(4),-3}");
                     }
                 }
             }
@@ -60,7 +63,8 @@ namespace SQLDemo
                 {
                     if (expenseMethodReader.GetInt32(5) == 0)
                     {
-                        Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {expenseMethodReader.GetString(3),-8} {expenseMethodReader.GetInt32(4),-3}");
+                        string formattedDate = expenseMethodReader.GetString(3).Substring(5,6);
+                        Console.WriteLine($@"{expenseMethodReader.GetString(1),-18} £{expenseMethodReader.GetDecimal(2),-8} {formattedDate,-8} {expenseMethodReader.GetInt32(4),-3}");
                     }
                 }
             }
