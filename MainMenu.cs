@@ -59,7 +59,7 @@ namespace SQLDemo
             bool exitMenu = false; // initialise exit menu flag, not currently used.
             while (exitMenu == false)
             {
-                Console.Write("Personal Finance & Budget Tracker.\n" +
+                Console.Write("Personals Finance & Budget Tracker.\n" +
                                   "\n" +
                                   $"Your Remaining Expendable Income This Month: £{takeHomePay - ExpensePageMethods.GetSumOfExpenses("USER CONTRIBUTION") - PurchasePageMethods.GetSumOfPurchases()}\n" +
                                   "\n" +
