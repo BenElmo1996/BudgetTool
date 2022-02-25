@@ -16,15 +16,18 @@ namespace SQLDemo
         // MAIN PURCHASE PAGE 
         public static void PurchaseMenu()
         {
-
             // Initialises an SQLiteConnection for use throughout this page
             string connectionString = "Data Source = ./Database.db";
             var purchasesConnection = new SQLiteConnection(connectionString);
             purchasesConnection.Open();
 
+            Console.Clear();
+
             // Main Purchase menu loop
             while (true)
             {
+                
+
                 Console.Write("Monthly Purchase Menu.\n" +
                                    "1. View purchases.\n" +
                                    "2. Add a purchase.\n" +

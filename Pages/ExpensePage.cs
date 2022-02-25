@@ -24,15 +24,18 @@ namespace SQLDemo
         // MAIN PAGE 
         public static void ExpenseMenu()
         {
-
             // Initialises an SQLiteConnection for use throughout this page
             string connectionString = "Data Source = ./Database.db";
             var expensesConnection = new SQLiteConnection(connectionString);
             expensesConnection.Open();
 
+            Console.Clear();
+
             // Main Expense menu loop
             while (true)
             {
+                
+
                 Console.Write("Expense Management\n" +
                                    "1. View expenses.\n" +
                                    "2. View upcoming expenses.\n" +
@@ -83,7 +86,7 @@ namespace SQLDemo
                     {
                         Console.WriteLine("\n" +
                                           "Please enter a Name, Price, Payment Date and how many people the expense will be shared between.\n" +
-                                          "Your payment date should be entered as a number, the suffix (i.e. th / rd / nd) is not required.\n" +
+                                          "Your payment date should be entered as an integer, the suffix (i.e. th / rd / nd) is not required.\n" +
                                           "\n" +
                                           "Press enter to continue with adding an expense or alternatively input 'q' to return to menu.");
 
@@ -161,12 +164,13 @@ namespace SQLDemo
 
                             // Initiliases command and passes placeholder values for new expense record
                             using var addExpenseCommand = new SQLiteCommand(expensesConnection);
-                            addExpenseCommand.CommandText = "INSERT INTO Expenses(Name, Price, Date, Contributors) VALUES(@ExpenseName, @ExpensePrice, @ExpenseDate, @ExpenseContributors)";
+                            addExpenseCommand.CommandText = "INSERT INTO Expenses(Name, Price, Date, Contributors) VALUES(@ExpenseName, @ExpensePrice, @ExpenseDate, @ExpenseContributors, @ExpenseFlag)";
 
                             addExpenseCommand.Parameters.AddWithValue("@ExpenseName", expense.expenseName);
                             addExpenseCommand.Parameters.AddWithValue("@ExpensePrice", expense.expensePrice);
                             addExpenseCommand.Parameters.AddWithValue("@ExpenseDate", expense.expensePaymentDate);
                             addExpenseCommand.Parameters.AddWithValue("@ExpenseContributors", expense.expenseContributors);
+                            addExpenseCommand.Parameters.AddWithValue("@ExpenseContributors", 1);
                             addExpenseCommand.Prepare();
 
                             addExpenseCommand.ExecuteNonQuery();

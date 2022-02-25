@@ -116,7 +116,7 @@ namespace SQLDemo
                 int upcomingExpenseCheck = DateTime.Compare(DateTime.Now, menuReader2.GetDateTime(3));
                 
                 int expenseID = menuReader2.GetInt32(0);
-               
+
                 int paidFlag;
                 if (menuReader2.GetInt32(5) != 3)
                 {

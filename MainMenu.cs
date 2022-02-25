@@ -8,6 +8,9 @@ namespace SQLDemo
     {
         public static void Main()
         {
+            Console.Clear();
+
+
             // Opens connection with database in order to check status of DB tables
             string connectionString = "Data Source = ./Database.db";
             var menuConnection = new SQLiteConnection(connectionString);
@@ -36,6 +39,9 @@ namespace SQLDemo
                 menuCommand.ExecuteNonQuery();
                 menuCommand.CommandText = "INSERT INTO UserInfo(TakehomePay, PayDay) VALUES(0, '2050-01-01')"; // placeholder values here, there's certain functions that rely on their being values hence adding them.
                 menuCommand.ExecuteNonQuery();
+
+                Console.WriteLine("Please Navigate to Menu Option 3 and Input a Pay Day and Takehome Salary.\n" +
+                                  "");
             }
 
             // Pulls takehome pay and next pay day from UserInfo table
@@ -47,19 +53,17 @@ namespace SQLDemo
             {
                 MenuMethods.ResetMonthlyData(menuConnection, menuCommand, nextPayDay);
             }
-            Console.WriteLine("test here1");
             // Determines which expenses have been paid and sets flags in DB accordingly
             MenuMethods.SetExpenseFlags(menuConnection, menuCommand);
 
-            Console.WriteLine("test here2");
             bool exitMenu = false; // initialise exit menu flag, not currently used.
             while (exitMenu == false)
             {
-                Console.Write("Welcome to the finance and budget tracking app.\n" +
+                Console.Write("Personal Finance & Budget Tracker.\n" +
                                   "\n" +
-                                  $"Your remaining expendable income is: £{takeHomePay - ExpensePageMethods.GetSumOfExpenses("USER CONTRIBUTION") - PurchasePageMethods.GetSumOfPurchases()}\n" +
+                                  $"Your Remaining Expendable Income This Month: £{takeHomePay - ExpensePageMethods.GetSumOfExpenses("USER CONTRIBUTION") - PurchasePageMethods.GetSumOfPurchases()}\n" +
                                   "\n" +
-                                  "Please choose from a menu option below\n" +
+                                  "Please choose from a menu option below:\n" +
                                   "1. Monthly Purchases.\n" +
                                   "2. Expenses\n" +
                                   "3. Edit User Info.\n" +
