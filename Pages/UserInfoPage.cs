@@ -8,24 +8,35 @@ namespace SQLDemo
         // Updates the payday field of UserInfo table - Independant method as its used in MenuMethods for incrementing payday as part of ResetMonthlyData method.
         public static void UpdatePayDay(int userPayDay, SQLiteCommand userInfoCommand)
         {
-
-            int year = DateTime.Now.Year;
-            int month = DateTime.Now.Month;
-            DateTime payDay = new DateTime(year, month, userPayDay);
-
-            // if it has passed payday this month, payday set to that day the following month
-            if (DateTime.Now.Day > userPayDay)
+            try
             {
-                payDay = payDay.AddMonths(1);
-            }
+                int year = DateTime.Now.Year;
+                int month = DateTime.Now.Month;
+                DateTime payDay = new DateTime(year, month, userPayDay);
 
-            userInfoCommand.CommandText = "UPDATE UserInfo " +
+                // if it has passed payday this month, payday set to that day the following month
+                if (DateTime.Now.Day > userPayDay)
+                {
+                    payDay = payDay.AddMonths(1);
+                }
+
+                userInfoCommand.CommandText = "UPDATE UserInfo " +
                                       "SET PayDay = @PayDay WHERE id = 1";
 
-            userInfoCommand.Parameters.AddWithValue("@PayDay", payDay);
-            userInfoCommand.Prepare();
+                userInfoCommand.Parameters.AddWithValue("@PayDay", payDay);
+                userInfoCommand.Prepare();
 
-            userInfoCommand.ExecuteNonQuery();
+                userInfoCommand.ExecuteNonQuery();
+
+                Console.WriteLine("Pay Day Updated.\n" +
+                                      "");
+            }
+            // if input date does not exist in the month (e.g. 31st of Feb)
+            catch (ArgumentOutOfRangeException)
+            {
+                Console.WriteLine("Invalid date, select menu option 2 and try again.");
+            }
+            
         }
 
 
@@ -47,7 +58,8 @@ namespace SQLDemo
                 (decimal takeHomePay, DateTime nextPayDay) = MenuMethods.GetUserInfo(userInfoConnection);
                 if (takeHomePay != 0)
                 {
-                    Console.WriteLine($"Your current net pay is £{takeHomePay}, and your next pay date is on {nextPayDay.ToShortDateString()}.");
+                    Console.WriteLine($"Your current net pay is £{takeHomePay}, and your next pay date is on {nextPayDay.ToShortDateString()}.\n" +
+                        $"");
                 }
                 
 
@@ -62,21 +74,30 @@ namespace SQLDemo
                 // Takehome pay is input in here
                 if (menuChoice == "1")
                 {
-                    Console.Write("Please enter your takehome (net) pay: ");
-                    string takehomePay = Console.ReadLine();
+                    try
+                    {
+                        Console.WriteLine("Please enter your takehome (net) pay: ");
+                        decimal takehomePay = decimal.Parse(Console.ReadLine());
 
-                   
 
-                    userInfoCommand.CommandText = "UPDATE UserInfo " +
-                                              "SET TakeHomePay = @TakeHomePay WHERE id = 1";
 
-                    userInfoCommand.Parameters.AddWithValue("@TakeHomePay", takehomePay);
-                    userInfoCommand.Prepare();
+                        userInfoCommand.CommandText = "UPDATE UserInfo " +
+                                                  "SET TakeHomePay = @TakeHomePay WHERE id = 1";
 
-                    userInfoCommand.ExecuteNonQuery();
+                        userInfoCommand.Parameters.AddWithValue("@TakeHomePay", takehomePay);
+                        userInfoCommand.Prepare();
 
-                    Console.WriteLine("Takehome pay input.\n"+
-                                      "");
+                        userInfoCommand.ExecuteNonQuery();
+
+                        Console.WriteLine("Takehome pay input.\n" +
+                                          "");
+                    }
+                    catch (FormatException)
+                    {
+                        Console.WriteLine("Invalid input, please select menu option 1 and try again.\n"+
+                                          "");
+                    }
+                    
 
                 }
                 // Pay day is input in here 
@@ -84,12 +105,21 @@ namespace SQLDemo
                 {
                     // this calculates the users next payday
                     Console.Write("Please enter the day of the month on which you are next paid: ");
-                    int userPayDay = int.Parse(Console.ReadLine());
+                    
+                    try
+                    {
+                        int userPayDay = int.Parse(Console.ReadLine());
+                        UpdatePayDay(userPayDay, userInfoCommand);
+                    }
+                    catch (FormatException)
+                    {
+                        Console.WriteLine("Invalid input, please select menu option 2 and try again.\n"+
+                                          "");
+                    }
 
-                    UpdatePayDay(userPayDay, userInfoCommand);
+                    
 
-                    Console.WriteLine("Pay Day Input.\n"+
-                                      "");
+                    
                 }
                 // Return to main menu here
                 else if (menuChoice == "3")

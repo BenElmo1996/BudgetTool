@@ -2,6 +2,7 @@
 using System.IO;
 using System.Data.SQLite;
 
+
 namespace SQLDemo
 {
     public class MainMenu
@@ -56,9 +57,7 @@ namespace SQLDemo
             // Determines which expenses have been paid and sets flags in DB accordingly
             MenuMethods.SetExpenseFlags(menuConnection, menuCommand);
 
-            bool exitMenu = false; // initialise exit menu flag, not currently used.
-            while (exitMenu == false)
-            {
+            
                 Console.Write("Personal Finance & Budget Tracker.\n" +
                                   "\n" +
                                   $"Your Remaining Expendable Income This Month: £{takeHomePay - ExpensePageMethods.GetSumOfExpenses("USER CONTRIBUTION") - PurchasePageMethods.GetSumOfPurchases()}\n" +
@@ -67,31 +66,45 @@ namespace SQLDemo
                                   "1. Monthly Purchases.\n" +
                                   "2. Expenses\n" +
                                   "3. Edit User Info.\n" +
+                                  "Q. Quit the Application.\n" +
                                   "Menu Choice: ");
 
+                
+
+            bool invalidInput = false;
+
+            while (!invalidInput)
+            {
                 var mainMenuChoice = Console.ReadLine();
 
-                if (mainMenuChoice == "1")
+                switch (mainMenuChoice)
                 {
-                    PurchasesPage.PurchaseMenu();
-                }
-                else if (mainMenuChoice == "2")
-                {
-                    ExpensePage.ExpenseMenu();
-                }
-                else if (mainMenuChoice == "3")
-                {
-                    UserInfoPage.UserInfoMenu();
-                }
-                else if (mainMenuChoice == "q")
-                {
-                    exitMenu = true;
-                }
-                else
-                {
-                    Console.WriteLine("Invalid Input");
+                    case "1":
+
+                        PurchasesPage.PurchaseMenu();
+                        break;
+
+                    case "2":
+                        ExpensePage.ExpenseMenu();
+                        break;
+
+                    case "3":
+                        UserInfoPage.UserInfoMenu();
+                        break;
+
+                    case "Q":
+                        Environment.Exit(1);
+                        break;
+
+                    default:
+
+                        Console.WriteLine("Invalid Input, please input one of the menu options above.");
+                        break;
                 }
             }
+            
+                
+            
         }
     }
 }
